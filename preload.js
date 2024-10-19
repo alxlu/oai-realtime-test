@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
     sendAudioData: (buffer) => ipcRenderer.send('audio-data', buffer),
+    onTranscribedText: (callback) => ipcRenderer.on('transcribed-text', (_event, text) => callback(text)),
+    onAudioResponse: (callback) => ipcRenderer.on('audio-response', (_event, audioBuffer) => callback(audioBuffer))
 });
 
 // const Websocket = require('ws');
