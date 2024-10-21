@@ -50,6 +50,15 @@ function handleOpenAIResponse(response) {
         turn_detection: { type: 'server_vad' },
     });
     console.log(client);
+    client.on('conversation.interrupted', () => {
+        BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
+    });
+
+    ipcMain.on('interrupt-info', async (event, trackSampleOffset) => {
+        const { trackId, offset } = trackSampleOffset;
+        await client.cancelResponse(trackId, offset);
+    });
+
     client.on('conversation.updated', ({ item, delta }) => {
         // get all items, e.g. if you need to update a chat window
         const items = client.conversation.getItems();

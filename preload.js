@@ -16,8 +16,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 ipcRenderer.on('audio-response', (_event, { audioDelta, id }) => {
     console.log('audioDelta:', audioDelta);
-    console.log('id:', id); 
+    console.log('id:', id);
     player.add16BitPCM(audioDelta, id);
+});
+
+ipcRenderer.on('conversation-interrupted', async () => {
+    console.log('conversation-interrupted');
+    const trackSampleOffset = await player.interrupt();
+    if (trackSampleOffset) {
+        ipcRenderer.send('interrupt-info', trackSampleOffset);
+    }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
