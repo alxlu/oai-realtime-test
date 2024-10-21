@@ -67,7 +67,7 @@ function handleOpenAIResponse(response) {
         console.log(item);
         if (delta?.audio) {
           // console.log(delta.audio);
-          handleOpenAIAudioResponse(delta.audio)
+          handleOpenAIAudioResponse({audioDelta: delta.audio, id: item.id});
           // Only one of the following will be populated for any given event
           // delta.audio = Int16Array, audio added
           // delta.transcript = string, transcript added

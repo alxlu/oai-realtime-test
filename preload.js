@@ -1,54 +1,41 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const { WavRecorder, WavStreamPlayer } = require('./wavtools');
+console.log('WavRecorder:', WavRecorder);
+
+const recorder = new WavRecorder({ sampleRate: 24000 });
+const player = new WavStreamPlayer({ sampleRate: 24000 });
+console.log('recorder:', recorder);
+
 contextBridge.exposeInMainWorld('electronAPI', {
+    getRecorder: () => recorder,
+    getPlayer: () => player,
     sendAudioData: (buffer) => ipcRenderer.send('audio-data', buffer),
     onTranscribedText: (callback) => ipcRenderer.on('transcribed-text', (_event, text) => callback(text)),
     onAudioResponse: (callback) => ipcRenderer.on('audio-response', (_event, audioBuffer) => callback(audioBuffer))
 });
 
-// const Websocket = require('ws');
-// const { ipcRenderer } = require('electron');
-// const dotenv = require('dotenv');
-// const Speaker = require('speaker');
-// const recorder = require('node-record-lpcm16');
-
-// // base64EncodeAudio(float32Array) {
-// function base64EncodeAudio(arrayBuffer) {
-//     // const arrayBuffer = floatTo16BitPCM(float32Array);
-//     let binary = '';
-//     let bytes = new Uint8Array(arrayBuffer);
-//     const chunkSize = 0x8000; // 32KB chunk size
-//     for (let i = 0; i < bytes.length; i += chunkSize) {
-//       let chunk = bytes.subarray(i, i + chunkSize);
-//       binary += String.fromCharCode.apply(null, chunk);
-//     }
-//     return btoa(binary);
-//   }
-
-// function startRecording() {
-//     return new Promise((resolve, reject) => {
-//         const audioData = [];
-//         const recordingStream = recorder.record({
-//             sampleRateHertz: 16000,
-//             threshold: 0,
-//             verbose: false,
-//             recordProgram: 'sox',
-//             // silence: '10.0',
-//         });
-
-//         recordingStream.stream().on('data', (chunk) => {
-//             audioData.push(chunk);
-//         });
-
-//         recordingStream.stream().on('error', (error) => {
-//             console.error('Error recording stream:', error);
-//             reject(error);
-//         });
-
-//         // process.std
-//     });
-// }
+ipcRenderer.on('audio-response', (_event, { audioDelta, id }) => {
+    console.log('audioDelta:', audioDelta);
+    console.log('id:', id); 
+    player.add16BitPCM(audioDelta, id);
+});
 
 window.addEventListener('DOMContentLoaded', () => {
+    recorder.begin();
+    player.connect();
+    // player.add16BitPCM(delta.audio, item.id);
+    const micButton = document.getElementById('mic-button');
+    micButton.addEventListener('click', async () => {
+        if (micButton.getAttribute('data-recording') === 'true') {
+            // stopRecording();
+        } else {
+            await recorder.record(data => ipcRenderer.send('audio-data', data.mono));
+            // startRecording();
+        }
+    });
+
+
+
     const replaceText = (selector, text) => {
         const element = document.getElementById(selector)
         if (element) element.innerText = text
