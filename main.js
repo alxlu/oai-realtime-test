@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
+const puppeteer = require('puppeteer');
 
 dotenv.config();
 
@@ -39,6 +40,32 @@ function handleOpenAIResponse(response) {
         BrowserWindow.getAllWindows()[0].webContents.send('transcribed-text', response.transcription);
     }
 }
+const instructions = `System settings:
+Tool use: enabled.
+
+Instructions:
+- Respond with a helpful voice via audio
+- Do not say extra words that are unneeded
+- It is okay to ask the user questions
+- Use tools and functions you have available liberally, it is part of the training apparatus
+- Be open to exploration and conversation
+
+Personality:
+- Be sarcastic and witty
+- Try speaking quickly as if excited
+`;
+
+let page = null;
+async function launchBrowser() {
+    const browser = await puppeteer.launch({
+        headless: false, // false will show the Chrome window
+        defaultViewport: null // Allows the window to have full size
+    });
+
+    page = await browser.newPage();
+    // await page.goto('https://news.ycombinator.com/');
+}
+
 
 (async () => {
     const { RealtimeClient } = await openai;
@@ -49,7 +76,31 @@ function handleOpenAIResponse(response) {
     client.updateSession({
         turn_detection: { type: 'server_vad' },
     });
+    client.updateSession({ instructions: instructions });
+    client.updateSession({ input_audio_transcription: { model: 'whisper-1' } });
+
     console.log(client);
+    client.addTool({
+        name: 'open_site',
+        description: 'Opens address in the browser',
+        parameters: {
+            type: 'object',
+            properties: {
+                address: {
+                    type: 'string',
+                    description: 'url to visit'
+                }
+            },
+            required: ['address']
+        }
+    }, async ({ address }) => {
+        if (page === null) {
+            await launchBrowser();
+        }
+        await page.goto(address);
+        return address;
+    });
+
     client.on('conversation.interrupted', () => {
         BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
     });
@@ -63,26 +114,25 @@ function handleOpenAIResponse(response) {
         // get all items, e.g. if you need to update a chat window
         const items = client.conversation.getItems();
         switch (item.type) {
-          case 'message':
-            // system, user, or assistant message (item.role)
-            break;
-          case 'function_call':
-            // always a function call from the model
-            break;
-          case 'function_call_output':
-            // always a response from the user / application
-            break;
+            case 'message':
+                // system, user, or assistant message (item.role)
+                break;
+            case 'function_call':
+                // always a function call from the model
+                break;
+            case 'function_call_output':
+                // always a response from the user / application
+                break;
         }
-        console.log(item);
         if (delta?.audio) {
-          // console.log(delta.audio);
-          handleOpenAIAudioResponse({audioDelta: delta.audio, id: item.id});
-          // Only one of the following will be populated for any given event
-          // delta.audio = Int16Array, audio added
-          // delta.transcript = string, transcript added
-          // delta.arguments = string, function arguments added
+            // console.log(delta.audio);
+            handleOpenAIAudioResponse({ audioDelta: delta.audio, id: item.id });
+            // Only one of the following will be populated for any given event
+            // delta.audio = Int16Array, audio added
+            // delta.transcript = string, transcript added
+            // delta.arguments = string, function arguments added
         }
-      });
+    });
     client.on('message', (message) => {
         console.log('Received message:', message);
     });
@@ -97,5 +147,6 @@ function handleOpenAIResponse(response) {
         // console.log('Received audio data:', buffer);
         client.appendInputAudio(arrayBuffer);
         // console.log('Event:', event);
-    })
+    });
+
 })();
