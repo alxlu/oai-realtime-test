@@ -110,6 +110,6 @@ class WavPacker {
   }
 }
 
-module.exports = WavPacker;
+module.exports.WavPacker = WavPacker;
 
 globalThis.WavPacker = WavPacker;

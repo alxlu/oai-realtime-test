@@ -1,6 +1,6 @@
-import { WavPacker } from './lib/wav_packer.js';
-import { AudioAnalysis } from './lib/analysis/audio_analysis.js';
-import { WavStreamPlayer } from './lib/wav_stream_player.js';
-import { WavRecorder } from './lib/wav_recorder.js';
+const {WavPacker} = require('./lib/wav_packer.js');
+const {AudioAnalysis} = require('./lib/analysis/audio_analysis.js');
+const {WavStreamPlayer} = require('./lib/wav_stream_player.js');
+const {WavRecorder} = require('./lib/wav_recorder.js');
 
-export { AudioAnalysis, WavPacker, WavStreamPlayer, WavRecorder };
+module.exports = { AudioAnalysis, WavPacker, WavStreamPlayer, WavRecorder };

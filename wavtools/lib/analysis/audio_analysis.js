@@ -1,9 +1,9 @@
-import {
+const {
   noteFrequencies,
   noteFrequencyLabels,
   voiceFrequencies,
   voiceFrequencyLabels,
-} from './constants.js';
+} = require('./constants.js');
 
 /**
  * Output of AudioAnalysis for the frequency domain of the audio
@@ -17,7 +17,7 @@ import {
  * Analyzes audio for visual output
  * @class
  */
-export class AudioAnalysis {
+class AudioAnalysis {
   /**
    * Retrieves frequency domain data from an AnalyserNode adjusted to a decibel range
    * returns human-readable formatting and labels
@@ -200,4 +200,5 @@ export class AudioAnalysis {
   }
 }
 
+module.exports.AudioAnalysis = AudioAnalysis;
 globalThis.AudioAnalysis = AudioAnalysis;

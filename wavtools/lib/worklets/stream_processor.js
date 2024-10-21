@@ -1,4 +1,4 @@
-export const StreamProcessorWorklet = `
+const StreamProcessorWorklet = `
 class StreamProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -89,8 +89,10 @@ class StreamProcessor extends AudioWorkletProcessor {
 registerProcessor('stream_processor', StreamProcessor);
 `;
 
+module.exports.StreamProcessorWorklet = StreamProcessorWorklet;
+
 const script = new Blob([StreamProcessorWorklet], {
   type: 'application/javascript',
 });
 const src = URL.createObjectURL(script);
-export const StreamProcessorSrc = src;
+module.exports.StreamProcessorSrc = src;

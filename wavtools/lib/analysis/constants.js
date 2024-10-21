@@ -31,8 +31,8 @@ const octave8FrequencyLabels = [
  * All note frequencies from 1st to 8th octave
  * in format "A#8" (A#, 8th octave)
  */
-export const noteFrequencies = [];
-export const noteFrequencyLabels = [];
+const noteFrequencies = [];
+const noteFrequencyLabels = [];
 for (let i = 1; i <= 8; i++) {
   for (let f = 0; f < octave8Frequencies.length; f++) {
     const freq = octave8Frequencies[f];
@@ -46,15 +46,24 @@ for (let i = 1; i <= 8; i++) {
  * 6 octave range: C1 to B6
  */
 const voiceFrequencyRange = [32.0, 2000.0];
-export const voiceFrequencies = noteFrequencies.filter((_, i) => {
+const voiceFrequencies = noteFrequencies.filter((_, i) => {
   return (
     noteFrequencies[i] > voiceFrequencyRange[0] &&
     noteFrequencies[i] < voiceFrequencyRange[1]
   );
 });
-export const voiceFrequencyLabels = noteFrequencyLabels.filter((_, i) => {
+const voiceFrequencyLabels = noteFrequencyLabels.filter((_, i) => {
   return (
     noteFrequencies[i] > voiceFrequencyRange[0] &&
     noteFrequencies[i] < voiceFrequencyRange[1]
   );
 });
+
+module.exports = {
+  octave8Frequencies,
+  octave8FrequencyLabels,
+  noteFrequencies,
+  noteFrequencyLabels,
+  voiceFrequencies,
+  voiceFrequencyLabels,
+};

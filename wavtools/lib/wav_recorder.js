@@ -1,6 +1,6 @@
-import { AudioProcessorSrc } from './worklets/audio_processor.js';
-import { AudioAnalysis } from './analysis/audio_analysis.js';
-import { WavPacker } from './wav_packer.js';
+const { AudioProcessorSrc } = require('./worklets/audio_processor.js');
+const { AudioAnalysis } = require('./analysis/audio_analysis.js');
+const { WavPacker } = require('./wav_packer.js');
 
 /**
  * Decodes audio into a wav file
@@ -15,7 +15,7 @@ import { WavPacker } from './wav_packer.js';
  * Records live stream of user audio as PCM16 "audio/wav" data
  * @class
  */
-export class WavRecorder {
+class WavRecorder {
   /**
    * Create a new WavRecorder instance
    * @param {{sampleRate?: number, outputToSpeakers?: boolean, debug?: boolean}} [options]
@@ -545,4 +545,5 @@ export class WavRecorder {
   }
 }
 
+module.exports.WavRecorder = WavRecorder;
 globalThis.WavRecorder = WavRecorder;
