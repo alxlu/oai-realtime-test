@@ -33,6 +33,12 @@ window.addEventListener('DOMContentLoaded', () => {
     player.connect();
     // player.add16BitPCM(delta.audio, item.id);
     const micButton = document.getElementById('mic-button');
+    const testButton = document.getElementById('trigger-pw');
+
+    testButton.addEventListener('click', () => {
+        ipcRenderer.send('trigger-pw', null);
+    });
+
     micButton.addEventListener('click', async () => {
         if (micButton.getAttribute('data-recording') === 'true') {
             // stopRecording();

@@ -3,6 +3,7 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
+const {loginToQBO} = require('./src/puppeteer/login.ts');
 
 dotenv.config();
 
@@ -101,6 +102,16 @@ async function launchBrowser() {
         return address;
     });
 
+    client.addTool({
+        name: 'login_to_qbo',
+        description: 'Opens the browser and logs into QBO'
+    }, async () => {
+        if (page === null) {
+            await launchBrowser();
+        }
+        await loginToQBO({ page });
+    });
+
     client.on('conversation.interrupted', () => {
         BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
     });
@@ -147,6 +158,19 @@ async function launchBrowser() {
         // console.log('Received audio data:', buffer);
         client.appendInputAudio(arrayBuffer);
         // console.log('Event:', event);
+    });
+    ipcMain.on('trigger-pw', async () => {
+        console.log('zzz trigger-pw invoked');
+        if (page === null) {
+            await launchBrowser();
+            loginToQBO({ page });
+            // await login(); // cookie stuff
+            // await createInvoice(); // doesn't need knowledge of the cookie
+            //     - go to /app/createInvoice
+            //     - find element id=quickfillCustomer
+        }
+        // await page.goto('https://google.com');
+        return 'google.com';
     });
 
 })();
