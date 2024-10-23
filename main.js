@@ -3,6 +3,8 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
+const {loginToQBO} = require('./src/puppeteer/login.ts');
+const {sendInvoice} = require('./src/puppeteer/sendInvoice.ts');
 
 dotenv.config();
 
@@ -101,6 +103,35 @@ async function launchBrowser() {
         return address;
     });
 
+    client.addTool({
+        name: 'login_to_qbo',
+        description: 'Opens the browser and logs into QBO'
+    }, async () => {
+        if (page === null) {
+            await launchBrowser();
+        }
+        await loginToQBO({ page });
+        return 'test';
+    });
+
+    client.addTool({
+        name: 'send_invoice_to',
+        description: 'Send an invoice to a customer',
+        parameters: {
+            type: 'object',
+            properties: {
+                customerName: {
+                    type: 'string',
+                    description: 'Sends an invoice to a customer via QBO'
+                }
+            },
+            required: ['customerName']
+        }
+    }, async ({ customerName }) => {
+        console.log('zzz customerName', customerName);
+        await sendInvoice({ page, customerName });
+    });
+
     client.on('conversation.interrupted', () => {
         BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
     });
@@ -147,6 +178,19 @@ async function launchBrowser() {
         // console.log('Received audio data:', buffer);
         client.appendInputAudio(arrayBuffer);
         // console.log('Event:', event);
+    });
+    ipcMain.on('trigger-pw', async () => {
+        console.log('zzz trigger-pw invoked');
+        if (page === null) {
+            await launchBrowser();
+            loginToQBO({ page });
+            // await login(); // cookie stuff
+            // await createInvoice(); // doesn't need knowledge of the cookie
+            //     - go to /app/createInvoice
+            //     - find element id=quickfillCustomer
+        }
+        // await page.goto('https://google.com');
+        return 'google.com';
     });
 
 })();
