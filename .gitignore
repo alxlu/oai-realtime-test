@@ -3,3 +3,4 @@ node_modules
 out/
 account.json
 cookies.json
+.DS_Store

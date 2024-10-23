@@ -3,22 +3,32 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
-const {loginToQBO, loadCookiesForAxios} = require('./src/puppeteer/login.ts');
-const {sendInvoice} = require('./src/puppeteer/sendInvoice.ts');
-const {url, makeRequestUsingStoredCookies} = require('./src/customerInfo.js');
+const { loginToQBO, loadCookiesForAxios } = require('./src/puppeteer/login.ts');
+const { sendInvoice } = require('./src/puppeteer/sendInvoice.ts');
+const { url, makeRequestUsingStoredCookies } = require('./src/customerInfo.js');
 
 dotenv.config();
-
+let splashwin = null;
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 1300,
         height: 600,
+        transparent: true,
+        frame: false,
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
+    splashwin = new BrowserWindow({
+        show: false,
+        transparent: true,
+        frame: false,
+        width: 500,
+        height: 500,
+    });
 
+ 
     win.loadFile('index.html');
     win.webContents.openDevTools();
 
@@ -58,14 +68,35 @@ Personality:
 - Try speaking quickly as if excited
 `;
 
+
 let page = null;
 async function launchBrowser() {
+
+
+
     const browser = await puppeteer.launch({
         headless: false, // false will show the Chrome window
-        defaultViewport: null // Allows the window to have full size
+        defaultViewport: null, // Allows the window to have full size
+        args: [
+            '--disable-infobars',
+            '--app=https://example.com'
+        ],
     });
+    if (splashwin) {
+        splashwin.maximize();
+        splashwin.loadFile('index2.html');
+        splashwin.show();
+    }
 
-    page = await browser.newPage();
+    const pages = await browser.pages();
+
+    // Check if there is already an existing page
+    page = pages.length > 0 ? pages[0] : await context.newPage();
+
+    // Use the page to do your operations
+    // await page.goto('https://example.com');
+
+    //page = await browser.newPage();
     // await page.goto('https://news.ycombinator.com/');
 }
 
@@ -183,9 +214,10 @@ async function launchBrowser() {
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
         if (page === null) {
-            // await launchBrowser();
-            // await loginToQBO({ page });
-            // const cookies = loadCookiesForAxios();
+            await launchBrowser();
+            await loginToQBO({ page });
+            if (splashwin) splashwin.close();
+            const cookies = loadCookiesForAxios();
             const res = await makeRequestUsingStoredCookies(url);
             console.log(res);
             // await login(); // cookie stuff
