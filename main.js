@@ -3,7 +3,8 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
-const {loginToQBO, sendInvoice} = require('./src/puppeteer/login.ts');
+const {loginToQBO} = require('./src/puppeteer/login.ts');
+const {sendInvoice} = require('./src/puppeteer/sendInvoice.ts');
 
 dotenv.config();
 
