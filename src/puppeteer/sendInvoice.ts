@@ -47,6 +47,7 @@ const sendInvoice = async ({ page, customerName = 'Zed', productOrService = 'Gam
     const div = await page.$('#sales-forms-ui\\/email_button');
     const button = await div.$('button');
     await button.click();
+    return 'successful';
 };
 
 module.exports = { sendInvoice };

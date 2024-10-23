@@ -108,6 +108,7 @@ async function launchBrowser() {
         name: 'login_to_qbo',
         description: 'Opens the browser and logs into QBO'
     }, async () => {
+        console.log('login_to_qbo tool invoked');
         if (page === null) {
             await launchBrowser();
         }
@@ -116,21 +117,29 @@ async function launchBrowser() {
     });
 
     client.addTool({
-        name: 'send_invoice_to',
-        description: 'Send an invoice to a customer',
+        name: 'send_invoice_to_customer_for_amount_and_product',
+        description: 'Send an invoice to a customer for an amount and a product or service',
         parameters: {
             type: 'object',
             properties: {
                 customerName: {
                     type: 'string',
                     description: 'Sends an invoice to a customer via QBO'
-                }
+                },
+                amount: {
+                    type: 'string',
+                    description: 'The amount to invoice the customer'
+                },
+                productOrService: {
+                    type: 'string',
+                    description: 'The product or service being invoiced'
+                },
             },
-            required: ['customerName']
+            required: ['customerName', 'amount', 'productOrService']
         }
-    }, async ({ customerName }) => {
-        console.log('zzz customerName', customerName);
-        await sendInvoice({ page, customerName });
+    }, async ({ customerName, amount, productOrService }) => {
+        console.log('zzz addTool callback', customerName, amount, productOrService);
+        return await sendInvoice({ page, customerName, amount, productOrService });
     });
 
     client.on('conversation.interrupted', () => {
@@ -183,11 +192,13 @@ async function launchBrowser() {
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
         if (page === null) {
-            // await launchBrowser();
-            // await loginToQBO({ page });
+            await launchBrowser();
+            await loginToQBO({ page });
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            await sendInvoice({ page });
             // const cookies = loadCookiesForAxios();
-            const res = await makeRequestUsingStoredCookies(url);
-            console.log(res);
+            // const res = await makeRequestUsingStoredCookies(url);
+            // console.log(res);
             // await login(); // cookie stuff
             // await createInvoice(); // doesn't need knowledge of the cookie
             //     - go to /app/createInvoice
