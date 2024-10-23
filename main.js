@@ -3,7 +3,7 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
-const {loginToQBO} = require('./src/puppeteer/login.ts');
+const {loginToQBO, sendInvoice} = require('./src/puppeteer/login.ts');
 
 dotenv.config();
 
@@ -110,6 +110,25 @@ async function launchBrowser() {
             await launchBrowser();
         }
         await loginToQBO({ page });
+        return 'test';
+    });
+
+    client.addTool({
+        name: 'send_invoice_to',
+        description: 'Send an invoice to a customer',
+        parameters: {
+            type: 'object',
+            properties: {
+                customerName: {
+                    type: 'string',
+                    description: 'Sends an invoice to a customer via QBO'
+                }
+            },
+            required: ['customerName']
+        }
+    }, async ({ customerName }) => {
+        console.log('zzz customerName', customerName);
+        await sendInvoice({ page, customerName });
     });
 
     client.on('conversation.interrupted', () => {
