@@ -22,6 +22,7 @@ const getComboBoxByAriaLabel = async ({ page, ariaLabel }) => {
 
 const sendInvoice = async ({ page, customerName = 'Zed', productOrService = 'Games', amount = '100' }) => {
     const customerNameQFSelector = "[data-cy='quickfill-contact'] input";
+    const amountFieldSelector = 'input[data-testid="amount line 1"]';
 
     await page.goto('https://qbo.intuit.com/app/invoice');
 
@@ -39,6 +40,8 @@ const sendInvoice = async ({ page, customerName = 'Zed', productOrService = 'Gam
     await selectQuickfillDropdown({ page, value: productOrService });
 
     // Select the amount
+    await page.click(amountFieldSelector);
+    await page.type(amountFieldSelector, amount);
 
     // Send the invoice
     const div = await page.$('#sales-forms-ui\\/email_button');
