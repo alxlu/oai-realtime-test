@@ -1,4 +1,40 @@
 const accountData = require('../../account.json');
+const fs = require('node:fs');
+const path = require('node:path');
+const axios = require('axios');
+const { CookieJar } = require('tough-cookie');
+const { wrapper } = require('axios-cookiejar-support');
+
+const cookieFilePath = path.join(__dirname, '../../cookies.json');
+
+const loadCookiesForAxios = () => {
+    const jar = new CookieJar();
+  
+    if (fs.existsSync(cookieFilePath)) {
+      const puppeteerCookies = JSON.parse(fs.readFileSync(cookieFilePath, 'utf-8'));
+  
+      // Add each cookie to the CookieJar in tough-cookie format
+      for (const cookie of puppeteerCookies) {
+        const toughCookieStr = `${cookie.name}=${cookie.value}; Domain=${cookie.domain}; Path=${cookie.path};`;
+        if (cookie.expires) {
+          // If the cookie has an expiration date, convert it to a valid tough-cookie format
+          let expiresDate = new Date(cookie.expires * 1000); // Puppeteer uses UNIX timestamp (seconds)
+          if (cookie.expires === -1) {
+            const oneWeekFromNow = new Date();
+            oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+            expiresDate = oneWeekFromNow;
+          }
+  
+          jar.setCookieSync(`${toughCookieStr} Expires=${expiresDate.toUTCString()};`, `https://${cookie.domain}`);
+        } else {
+          jar.setCookieSync(toughCookieStr, `https://${cookie.domain}`);
+        }
+      }
+    }
+  
+    return jar;
+  };
+
 
 const loginToQBO = async ({ page }) => {
     if (page) {
@@ -30,7 +66,11 @@ const loginToQBO = async ({ page }) => {
                 }
             }
         }, accountData.companyName);
+        await page.waitForNavigation();
+        const cookies = await page.cookies();
+        fs.writeFileSync(cookieFilePath, JSON.stringify(cookies, null, 2));
+
     }
 };
 
-module.exports = { loginToQBO };
+module.exports = { loginToQBO, cookieFilePath, loadCookiesForAxios };

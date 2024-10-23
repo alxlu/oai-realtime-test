@@ -3,8 +3,9 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
-const {loginToQBO} = require('./src/puppeteer/login.ts');
+const {loginToQBO, loadCookiesForAxios} = require('./src/puppeteer/login.ts');
 const {sendInvoice} = require('./src/puppeteer/sendInvoice.ts');
+const {url, makeRequestUsingStoredCookies} = require('./src/customerInfo.js');
 
 dotenv.config();
 
@@ -182,8 +183,11 @@ async function launchBrowser() {
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
         if (page === null) {
-            await launchBrowser();
-            loginToQBO({ page });
+            // await launchBrowser();
+            // await loginToQBO({ page });
+            // const cookies = loadCookiesForAxios();
+            const res = await makeRequestUsingStoredCookies(url);
+            console.log(res);
             // await login(); // cookie stuff
             // await createInvoice(); // doesn't need knowledge of the cookie
             //     - go to /app/createInvoice
