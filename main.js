@@ -117,6 +117,19 @@ async function launchBrowser() {
     });
 
     client.addTool({
+        name: 'give_customers_with_outstanding_balance',
+        description: 'Returns a JSON array of customers and their outstanding balances',
+    }, async () => {
+        const res = await makeRequestUsingStoredCookies(url);
+        return res.data.map((entry) => {
+            return {
+                name: entry.fullName.displayName,
+                outstandingBalance: entry.arBalance || '0.00',
+            };
+        });
+    });
+
+    client.addTool({
         name: 'send_invoice_to_customer_for_amount_and_product',
         description: 'Send an invoice to a customer for an amount and a product or service',
         parameters: {
@@ -192,12 +205,20 @@ async function launchBrowser() {
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
         if (page === null) {
-            await launchBrowser();
-            await loginToQBO({ page });
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            await sendInvoice({ page });
+            // await launchBrowser();
+            // await loginToQBO({ page });
+            // await new Promise(resolve => setTimeout(resolve, 3000));
+            // await sendInvoice({ page });
             // const cookies = loadCookiesForAxios();
-            // const res = await makeRequestUsingStoredCookies(url);
+            const res = await makeRequestUsingStoredCookies(url);
+            const filteredData = res.data.map((entry) => {
+                return {
+                    name: entry.fullName.displayName,
+                    outstandingBalance: entry.arBalance || '0.00',
+                };
+            });
+            // console.log(JSON.stringify(res.data));
+            console.log(filteredData);
             // console.log(res);
             // await login(); // cookie stuff
             // await createInvoice(); // doesn't need knowledge of the cookie

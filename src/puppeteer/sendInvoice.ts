@@ -47,6 +47,13 @@ const sendInvoice = async ({ page, customerName = 'Zed', productOrService = 'Gam
     const div = await page.$('#sales-forms-ui\\/email_button');
     const button = await div.$('button');
     await button.click();
+
+    // Confirm send
+    await page.waitForSelector('div[data-cy="sendButton"]');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const sendButton = await page.$('div[data-cy="sendButton"] button:first-of-type');
+    await sendButton.click();
+
     return 'successful';
 };
 
