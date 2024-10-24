@@ -12,8 +12,8 @@ let splashwin = null;
 let win = null;
 const createWindow = () => {
     win = new BrowserWindow({
-        width: 1300,
-        height: 600,
+        width: 600,
+        height: 1300,
         transparent: true,
         frame: false,
         webPreferences: {
@@ -24,7 +24,7 @@ const createWindow = () => {
 
 
     win.loadFile('index.html');
-    win.webContents.openDevTools();
+    //win.webContents.openDevTools();
     splashwin = new BrowserWindow({
         show: false,
         transparent: true,
@@ -84,12 +84,15 @@ async function launchBrowser() {
         splashwin.maximize();
         splashwin.loadFile('index2.html');
         splashwin.show();
-        setTimeout(() => {
-            splashwin.close();
-        }, 5200)
     }
 
     const pages = await browser.pages();
+    setTimeout(() => {
+        if (splashwin) {
+            splashwin.close();
+            page.bringToFront();
+        }
+    }, 5200)
 
     // Check if there is already an existing page
     page = pages.length > 0 ? pages[0] : await context.newPage();
@@ -104,6 +107,7 @@ async function launchBrowser() {
 
 
 (async () => {
+    // return;
     console.log('hi');
     const { RealtimeClient } = await openai;
     const client = new RealtimeClient({
@@ -181,14 +185,21 @@ async function launchBrowser() {
         const items = client.conversation.getItems();
         switch (item.type) {
             case 'message':
+                console.log('msg', item);
                 // system, user, or assistant message (item.role)
                 break;
             case 'function_call':
+                console.log('fn', item);
                 // always a function call from the model
                 break;
             case 'function_call_output':
+                console.log('fn outputsl, item');
                 // always a response from the user / application
                 break;
+        }
+        if (delta?.transcript) {
+            console.log(delta);
+            // console.log(JSON.stringify(delta.transcript, null, 2));
         }
         if (delta?.audio) {
             // console.log(delta.audio);

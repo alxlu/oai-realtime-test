@@ -4,37 +4,85 @@
 <head>
   <meta charset="UTF-8">
   <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline';">
   <style>
-    body {
+    .container {
+      position: relative;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: black;
+    }
+    @keyframes pulse-shadow {
+            0% {
+                box-shadow: 0 0 10px 5px rgba(16, 200, 25, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 20px 10px rgba(7, 225, 25, 0.779);
+            }
+            100% {
+                box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+
+    [data-recording="true"] {
+      background-color: green !important;
+      animation: pulse-shadow 1.5s infinite ease-in-out; /* Pulse box-shadow */
+
     }
 
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
+    [data-recording="false"] {
+      background-color: red !important;
+    }
+
+    .orb-button {
+      margin-top: 20px;
+      width: 100px;
+      height: 100px;
+      background-color: gray;
+      transition: background-color 1s ease; 
+      border-radius: 50%;
       border: none;
-      border-radius: 5px;
-      background-color: #007bff;
-      color: white;
       cursor: pointer;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 3;
     }
 
-    button:active {
-      background-color: #0056b3;
+    .square {
+      width: 500px;
+      /* Wider than the circle */
+      height: 700px;
+      background-color: rgba(0, 0, 0, 0.4);
+      position: absolute;
+      top: 50px;
+      /* Moves the square to bisect the orb */
+      z-index: 1;
+    }
+
+    .titlebar {
+      width: 25%;
+      height: 30px;
+      -webkit-app-region: drag;
+    }
+
+    #trigger-pw {
+      z-index: 3;
     }
   </style>
   <title>chatQB$</title>
 </head>
 
 <body>
-  <button id="mic-button">🎤 Start Listening</button>
-  <button id="trigger-pw">trigger pw</button>
+
+  <div class="container">
+    <button id="mic-button" class="orb-button"></button>
+    <div class="square">
+      <div class="titlebar"></div>
+      <button id="trigger-pw">manual trigger</button>
+    </div>
+  </div>
   <script src="renderer.js"></script>
 </body>
 
