@@ -146,6 +146,7 @@ async function launchBrowser() {
         name: 'login_to_qbo',
         description: 'Opens the browser and logs into QBO'
     }, async () => {
+        console.log('login_to_qbo tool invoked');
         if (page === null) {
             await launchBrowser();
         }
@@ -154,21 +155,42 @@ async function launchBrowser() {
     });
 
     client.addTool({
-        name: 'send_invoice_to',
-        description: 'Send an invoice to a customer',
+        name: 'give_customers_with_outstanding_balance',
+        description: 'Returns a JSON array of customers and their outstanding balances',
+    }, async () => {
+        const res = await makeRequestUsingStoredCookies(url);
+        return res.data.map((entry) => {
+            return {
+                name: entry.fullName.displayName,
+                outstandingBalance: entry.arBalance || '0.00',
+            };
+        });
+    });
+
+    client.addTool({
+        name: 'send_invoice_to_customer_for_amount_and_product',
+        description: 'Send an invoice to a customer for an amount and a product or service',
         parameters: {
             type: 'object',
             properties: {
                 customerName: {
                     type: 'string',
                     description: 'Sends an invoice to a customer via QBO'
-                }
+                },
+                amount: {
+                    type: 'string',
+                    description: 'The amount to invoice the customer'
+                },
+                productOrService: {
+                    type: 'string',
+                    description: 'The product or service being invoiced'
+                },
             },
-            required: ['customerName']
+            required: ['customerName', 'amount', 'productOrService']
         }
-    }, async ({ customerName }) => {
-        console.log('zzz customerName', customerName);
-        await sendInvoice({ page, customerName });
+    }, async ({ customerName, amount, productOrService }) => {
+        console.log('zzz addTool callback', customerName, amount, productOrService);
+        return await sendInvoice({ page, customerName, amount, productOrService });
     });
 
     client.on('conversation.interrupted', () => {
@@ -230,7 +252,15 @@ async function launchBrowser() {
             if (splashwin) splashwin.close();
             const cookies = loadCookiesForAxios();
             const res = await makeRequestUsingStoredCookies(url);
-            console.log(res);
+            const filteredData = res.data.map((entry) => {
+                return {
+                    name: entry.fullName.displayName,
+                    outstandingBalance: entry.arBalance || '0.00',
+                };
+            });
+            // console.log(JSON.stringify(res.data));
+            console.log(filteredData);
+            // console.log(res);
             // await login(); // cookie stuff
             // await createInvoice(); // doesn't need knowledge of the cookie
             //     - go to /app/createInvoice
