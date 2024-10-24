@@ -3,24 +3,35 @@ const path = require('node:path');
 const openai = import('@openai/realtime-api-beta');
 const dotenv = require('dotenv');
 const puppeteer = require('puppeteer');
-const {loginToQBO, loadCookiesForAxios} = require('./src/puppeteer/login.ts');
-const {sendInvoice} = require('./src/puppeteer/sendInvoice.ts');
-const {url, makeRequestUsingStoredCookies} = require('./src/customerInfo.js');
+const { loginToQBO, loadCookiesForAxios } = require('./src/puppeteer/login.ts');
+const { sendInvoice } = require('./src/puppeteer/sendInvoice.ts');
+const { url, makeRequestUsingStoredCookies } = require('./src/customerInfo.js');
 
 dotenv.config();
-
+let splashwin = null;
+let win = null;
 const createWindow = () => {
-    const win = new BrowserWindow({
-        width: 1300,
-        height: 600,
+    win = new BrowserWindow({
+        width: 600,
+        height: 1300,
+        transparent: true,
+        frame: false,
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
 
+
     win.loadFile('index.html');
-    win.webContents.openDevTools();
+    //win.webContents.openDevTools();
+    splashwin = new BrowserWindow({
+        show: false,
+        transparent: true,
+        frame: false,
+        width: 500,
+        height: 500,
+    });
 
 }
 
@@ -34,13 +45,13 @@ app.whenReady().then(() => {
 });
 
 function handleOpenAIAudioResponse(audioBuffer) {
-    BrowserWindow.getAllWindows()[0].webContents.send('audio-response', audioBuffer);
+    win.webContents.send('audio-response', audioBuffer);
 }
 
 function handleOpenAIResponse(response) {
     if (response.transcription) {
         console.log('Transcription:', response.transcription);
-        BrowserWindow.getAllWindows()[0].webContents.send('transcribed-text', response.transcription);
+        if (win) win.webContents.send('transcribed-text', response.transcription);
     }
 }
 const instructions = `System settings:
@@ -58,19 +69,46 @@ Personality:
 - Try speaking quickly as if excited
 `;
 
+
 let page = null;
 async function launchBrowser() {
     const browser = await puppeteer.launch({
         headless: false, // false will show the Chrome window
-        defaultViewport: null // Allows the window to have full size
+        defaultViewport: null, // Allows the window to have full size
+        args: [
+            '--disable-infobars',
+            '--app=https://example.com'
+        ],
     });
+    if (splashwin) {
+        splashwin.maximize();
+        splashwin.loadFile('index2.html');
+        splashwin.show();
+    }
 
-    page = await browser.newPage();
+    const pages = await browser.pages();
+    setTimeout(() => {
+        if (splashwin) {
+            splashwin.close();
+            page.bringToFront();
+        }
+    }, 5200)
+
+    // Check if there is already an existing page
+    page = pages.length > 0 ? pages[0] : await context.newPage();
+
+    // Use the page to do your operations
+    // await page.goto('https://example.com');
+
+    //page = await browser.newPage();
     // await page.goto('https://news.ycombinator.com/');
 }
 
 
+
 (async () => {
+    // return;
+    console.log('hi');
     const { RealtimeClient } = await openai;
     const client = new RealtimeClient({
         apiKey: process.env.OPENAI_API_KEY,
@@ -156,7 +194,7 @@ async function launchBrowser() {
     });
 
     client.on('conversation.interrupted', () => {
-        BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
+        if (win) win.webContents.send('conversation-interrupted');
     });
 
     ipcMain.on('interrupt-info', async (event, trackSampleOffset) => {
@@ -169,14 +207,21 @@ async function launchBrowser() {
         const items = client.conversation.getItems();
         switch (item.type) {
             case 'message':
+                console.log('msg', item);
                 // system, user, or assistant message (item.role)
                 break;
             case 'function_call':
+                console.log('fn', item);
                 // always a function call from the model
                 break;
             case 'function_call_output':
+                console.log('fn outputsl, item');
                 // always a response from the user / application
                 break;
+        }
+        if (delta?.transcript) {
+            console.log(delta);
+            // console.log(JSON.stringify(delta.transcript, null, 2));
         }
         if (delta?.audio) {
             // console.log(delta.audio);
@@ -196,20 +241,16 @@ async function launchBrowser() {
     client.on('close', () => {
         console.log('Connection closed');
     });
-    ipcMain.on('audio-data', (event, arrayBuffer) => {
-        // const buffer = Buffer.from(arrayBuffer);
-        // console.log('Received audio data:', buffer);
+    ipcMain.on('audio-data', (_event, arrayBuffer) => {
         client.appendInputAudio(arrayBuffer);
-        // console.log('Event:', event);
     });
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
         if (page === null) {
-            // await launchBrowser();
-            // await loginToQBO({ page });
-            // await new Promise(resolve => setTimeout(resolve, 3000));
-            // await sendInvoice({ page });
-            // const cookies = loadCookiesForAxios();
+            await launchBrowser();
+            await loginToQBO({ page });
+            if (splashwin) splashwin.close();
+            const cookies = loadCookiesForAxios();
             const res = await makeRequestUsingStoredCookies(url);
             const filteredData = res.data.map((entry) => {
                 return {
