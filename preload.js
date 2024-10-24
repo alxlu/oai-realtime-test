@@ -41,10 +41,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
     micButton.addEventListener('click', async () => {
         if (micButton.getAttribute('data-recording') === 'true') {
-            // stopRecording();
+            micButton.setAttribute('data-recording', 'false');
+            micButton.innerText = 'Resume';
+            await recorder.pause();
         } else {
-            await recorder.record(data => ipcRenderer.send('audio-data', data.mono));
-            // startRecording();
+            micButton.setAttribute('data-recording', 'true');
+            micButton.innerText = 'Pause';
+            await recorder.record(data => {
+                ipcRenderer.send('audio-data', data.mono)
+            });
+            console.log('recording');
         }
     });
 

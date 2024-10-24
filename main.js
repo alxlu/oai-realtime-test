@@ -9,8 +9,9 @@ const { url, makeRequestUsingStoredCookies } = require('./src/customerInfo.js');
 
 dotenv.config();
 let splashwin = null;
+let win = null;
 const createWindow = () => {
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 1300,
         height: 600,
         transparent: true,
@@ -20,6 +21,10 @@ const createWindow = () => {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+
+    win.loadFile('index.html');
+    win.webContents.openDevTools();
     splashwin = new BrowserWindow({
         show: false,
         transparent: true,
@@ -27,10 +32,6 @@ const createWindow = () => {
         width: 500,
         height: 500,
     });
-
- 
-    win.loadFile('index.html');
-    win.webContents.openDevTools();
 
 }
 
@@ -44,13 +45,13 @@ app.whenReady().then(() => {
 });
 
 function handleOpenAIAudioResponse(audioBuffer) {
-    BrowserWindow.getAllWindows()[0].webContents.send('audio-response', audioBuffer);
+    win.webContents.send('audio-response', audioBuffer);
 }
 
 function handleOpenAIResponse(response) {
     if (response.transcription) {
         console.log('Transcription:', response.transcription);
-        BrowserWindow.getAllWindows()[0].webContents.send('transcribed-text', response.transcription);
+        if (win) win.webContents.send('transcribed-text', response.transcription);
     }
 }
 const instructions = `System settings:
@@ -71,9 +72,6 @@ Personality:
 
 let page = null;
 async function launchBrowser() {
-
-
-
     const browser = await puppeteer.launch({
         headless: false, // false will show the Chrome window
         defaultViewport: null, // Allows the window to have full size
@@ -86,6 +84,9 @@ async function launchBrowser() {
         splashwin.maximize();
         splashwin.loadFile('index2.html');
         splashwin.show();
+        setTimeout(() => {
+            splashwin.close();
+        }, 5200)
     }
 
     const pages = await browser.pages();
@@ -101,7 +102,9 @@ async function launchBrowser() {
 }
 
 
+
 (async () => {
+    console.log('hi');
     const { RealtimeClient } = await openai;
     const client = new RealtimeClient({
         apiKey: process.env.OPENAI_API_KEY,
@@ -165,7 +168,7 @@ async function launchBrowser() {
     });
 
     client.on('conversation.interrupted', () => {
-        BrowserWindow.getAllWindows()[0].webContents.send('conversation-interrupted');
+        if (win) win.webContents.send('conversation-interrupted');
     });
 
     ipcMain.on('interrupt-info', async (event, trackSampleOffset) => {
@@ -205,11 +208,8 @@ async function launchBrowser() {
     client.on('close', () => {
         console.log('Connection closed');
     });
-    ipcMain.on('audio-data', (event, arrayBuffer) => {
-        // const buffer = Buffer.from(arrayBuffer);
-        // console.log('Received audio data:', buffer);
+    ipcMain.on('audio-data', (_event, arrayBuffer) => {
         client.appendInputAudio(arrayBuffer);
-        // console.log('Event:', event);
     });
     ipcMain.on('trigger-pw', async () => {
         console.log('zzz trigger-pw invoked');
